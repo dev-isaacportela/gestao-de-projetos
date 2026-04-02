@@ -64,3 +64,13 @@ export interface ProjectWithProgress extends Project {
   total_tasks: number;
   done_tasks: number;
 }
+
+export interface Document {
+  id: string;
+  project_id: string;
+  name: string;
+  size: string;
+  type: string;
+  data: string;
+  created_at: string;
+}

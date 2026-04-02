@@ -1,5 +1,5 @@
 "use client";
-import { Project, Task, Category, ChecklistItem, TimeEntry, ProjectWithProgress } from "@/types";
+import { Project, Task, Category, ChecklistItem, TimeEntry, ProjectWithProgress, Document } from "@/types";
 import { getPriority } from "./utils";
 
 function uid(): string {
@@ -271,4 +271,30 @@ export function getReportData() {
   }).filter(c => c.count > 0);
 
   return { timeByCat, doneTasksByCat };
+}
+
+// ── Documents ──────────────────────────────────────────────────────────────
+
+export function getDocuments(projectId: string): Document[] {
+  return get<Document[]>("ppm_documents", []).filter(d => d.project_id === projectId);
+}
+
+export function addDocument(projectId: string, name: string, size: string, type: string, data: string): Document {
+  const docs = get<Document[]>("ppm_documents", []);
+  const doc: Document = { id: uid(), project_id: projectId, name, size, type, data, created_at: now() };
+  set("ppm_documents", [...docs, doc]);
+  return doc;
+}
+
+export function deleteDocument(id: string): void {
+  set("ppm_documents", get<Document[]>("ppm_documents", []).filter(d => d.id !== id));
+}
+
+// ── Notes ─────────────────────────────────────────────────────────────────
+export function getProjectNotes(projectId: string): string {
+  return get<string>(`ppm_notes_${projectId}`, "");
+}
+
+export function saveProjectNotes(projectId: string, notes: string): void {
+  set(`ppm_notes_${projectId}`, notes);
 }
