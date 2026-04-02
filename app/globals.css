@@ -1,0 +1,77 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    background-color: #f7f9fb;
+    color: #191c1e;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  :root {
+    --primary: #1b31e7;
+    --primary-container: #3e51ff;
+    --surface: #f7f9fb;
+    --surface-low: #f2f4f6;
+    --surface-lowest: #ffffff;
+    --surface-high: #e6e8ea;
+    --on-surface: #191c1e;
+    --on-surface-variant: #444556;
+    --outline-variant: #c5c5d9;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-glass rounded-lg shadow-glass border border-outline_variant/15;
+  }
+  .btn-primary {
+    @apply px-5 py-2.5 rounded-full text-white font-medium text-sm transition-all duration-200
+           bg-gradient-to-r from-primary to-primary_container hover:shadow-glow hover:scale-[1.02] active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply px-5 py-2.5 rounded-full text-on_secondary_container font-medium text-sm transition-all duration-200
+           bg-secondary_container hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply px-4 py-2 rounded-full text-primary font-medium text-sm transition-all duration-200
+           hover:bg-primary_fixed;
+  }
+  .input-field {
+    @apply w-full bg-surface_container_high rounded-DEFAULT px-4 py-3 text-on_surface
+           placeholder:text-on_surface_variant/60 text-sm outline-none
+           focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all duration-200;
+  }
+  .surface-card {
+    @apply bg-white rounded-lg shadow-glass;
+  }
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(27,49,231,0.2); }
+  50% { box-shadow: 0 0 0 8px rgba(27,49,231,0); }
+}
+
+.focus-pulse:focus {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Kanban drag overlay */
+.kanban-dragging {
+  @apply opacity-50 rotate-2 scale-105;
+}
