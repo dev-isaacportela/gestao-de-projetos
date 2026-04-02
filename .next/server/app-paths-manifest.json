@@ -1,11 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
   "/projects/[id]/edit/page": "app/projects/[id]/edit/page.js",
-  "/projects/page": "app/projects/page.js",
-  "/projects/[id]/page": "app/projects/[id]/page.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/projects/new/page": "app/projects/new/page.js",
   "/reports/page": "app/reports/page.js",
+  "/projects/[id]/page": "app/projects/[id]/page.js",
+  "/page": "app/page.js",
   "/settings/page": "app/settings/page.js",
-  "/projects/new/page": "app/projects/new/page.js"
+  "/projects/page": "app/projects/page.js"
 }

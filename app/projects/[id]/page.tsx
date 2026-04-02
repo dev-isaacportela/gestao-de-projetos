@@ -5,6 +5,7 @@ import AppLayout from "@/components/AppLayout";
 import DocumentUploader from "@/components/DocumentUploader";
 import RecentActivity from "@/components/RecentActivity";
 import ProjectStats from "@/components/ProjectStats";
+import ActiveTasks from "@/components/ActiveTasks";
 import { getProjectById, getTasksByProject, getProjectsWithProgress } from "@/lib/store";
 import { Task, ProjectWithProgress } from "@/types";
 import { ArrowLeft, Pencil } from "lucide-react";
@@ -70,8 +71,17 @@ export default function ProjectPage() {
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Left Column - Documents */}
-              <div className="lg:col-span-2">
+              {/* Left Column - Active Tasks & Documents */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Active Tasks Section */}
+                <div className="bg-surface_container_lowest rounded-lg p-6 border border-outline_variant/10">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-on_surface">Tarefas Ativas</h2>
+                    <span className="text-xs text-on_surface_variant">{tasks.filter(t => t.status !== "done").length} tarefas</span>
+                  </div>
+                  <ActiveTasks tasks={tasks} />
+                </div>
+
                 {/* Documents Section */}
                 <div className="bg-surface_container_lowest rounded-lg p-6 border border-outline_variant/10">
                   <h2 className="text-lg font-semibold text-on_surface mb-4">Documentações</h2>
@@ -79,11 +89,11 @@ export default function ProjectPage() {
                 </div>
               </div>
 
-              {/* Right Column - Activity */}
+              {/* Right Column - Progress & Activity */}
               <div className="space-y-6">
                 {/* Progress Circle */}
                 <div className="bg-surface_container_lowest rounded-lg p-6 border border-outline_variant/10 flex flex-col items-center justify-center">
-                  <div className="relative w-32 h-32">
+                  <div className="relative w-40 h-40">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                       <circle
                         cx="50"
@@ -91,7 +101,7 @@ export default function ProjectPage() {
                         r="45"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="4"
+                        strokeWidth="3"
                         className="text-surface_container"
                       />
                       <circle
@@ -100,13 +110,13 @@ export default function ProjectPage() {
                         r="45"
                         fill="none"
                         stroke="currentColor"
-                        strokeWidth="4"
+                        strokeWidth="3"
                         strokeDasharray={`${project.progress * 2.83} 283`}
                         className="text-primary transition-all duration-500"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <p className="text-2xl font-bold text-on_surface">{project.progress}%</p>
+                      <p className="text-3xl font-bold text-on_surface">{project.progress}%</p>
                       <p className="text-xs text-on_surface_variant">COMPLETO</p>
                     </div>
                   </div>
