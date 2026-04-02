@@ -23,6 +23,16 @@ interface Props {
 export default function KanbanBoard({ tasks, onTaskClick, onAddTask, onReload }: Props) {
   const [dragging, setDragging] = useState<string | null>(null);
   const [over, setOver] = useState<Task["status"] | null>(null);
+  // track which tasks have active timers (to show visual cue on columns)
+  const [activeTimers, setActiveTimers] = useState<Set<string>>(new Set());
+
+  function handleTimerChange(taskId: string, running: boolean) {
+    setActiveTimers(prev => {
+      const next = new Set(prev);
+      running ? next.add(taskId) : next.delete(taskId);
+      return next;
+    });
+  }
 
   function handleDragStart(e: React.DragEvent, taskId: string) {
     setDragging(taskId);
@@ -54,12 +64,15 @@ export default function KanbanBoard({ tasks, onTaskClick, onAddTask, onReload }:
     <div className="flex gap-5 h-full overflow-x-auto pb-4">
       {COLUMNS.map(col => {
         const colTasks = tasks.filter(t => t.status === col.id);
+        const colHasActiveTimer = colTasks.some(t => activeTimers.has(t.id));
+
         return (
           <div
             key={col.id}
             className={cn(
               "flex flex-col flex-shrink-0 w-72 rounded-lg transition-all duration-200",
-              over === col.id ? "ring-2 ring-primary/30 bg-primary_fixed/30" : "bg-surface_container_low"
+              over === col.id ? "ring-2 ring-primary/30 bg-primary_fixed/30" : "bg-surface_container_low",
+              colHasActiveTimer && "ring-1 ring-primary/20"
             )}
             onDragOver={e => handleDragOver(e, col.id)}
             onDrop={e => handleDrop(e, col.id)}
@@ -73,6 +86,9 @@ export default function KanbanBoard({ tasks, onTaskClick, onAddTask, onReload }:
                 <span className="text-xs text-on_surface_variant bg-white px-1.5 py-0.5 rounded-full ml-1">
                   {colTasks.length}
                 </span>
+                {colHasActiveTimer && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                )}
               </div>
               <button
                 onClick={() => onAddTask(col.id)}
@@ -92,6 +108,8 @@ export default function KanbanBoard({ tasks, onTaskClick, onAddTask, onReload }:
                   onClick={() => onTaskClick(task)}
                   onDragStart={e => handleDragStart(e, task.id)}
                   onDragEnd={handleDragEnd}
+                  onTimerChange={handleTimerChange}
+                  onReload={onReload}
                 />
               ))}
               {colTasks.length === 0 && (
