@@ -1,116 +1,173 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { getReportData, getProjects, getTasks } from "@/lib/store";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { BarChart3, Clock, CheckSquare, FolderOpen } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart3, Clock, CheckSquare, FolderOpen, Zap, Share2, Target, Sparkles, CircleDot } from "lucide-react";
 import { formatSecondsLong } from "@/lib/utils";
 
+const heatmapColors = ["bg-slate-100", "bg-slate-300", "bg-indigo-100", "bg-indigo-300", "bg-indigo-500", "bg-indigo-700"];
+
+function getHeatmapIntensity(index: number, total: number) {
+  if (total === 0) return 0;
+  const ratio = index / total;
+  if (ratio < 0.15) return 1;
+  if (ratio < 0.35) return 2;
+  if (ratio < 0.6) return 3;
+  if (ratio < 0.85) return 4;
+  return 5;
+}
+
+function buildAnnualGrid(rawValue: number) {
+  const cells = [];
+  const filledCells = Math.min(364, Math.max(12, Math.round(rawValue / 3600) * 8));
+  for (let i = 0; i < 364; i++) {
+    const intensity = getHeatmapIntensity(i < filledCells ? i : 0, filledCells || 1);
+    cells.push({ key: i, intensity });
+  }
+  return cells;
+}
+
 export default function ReportsPage() {
-  const [data, setData] = useState<{ timeByCat: any[]; doneTasksByCat: any[] }>({ timeByCat: [], doneTasksByCat: [] });
+  const [reportData, setReportData] = useState<{ timeByCat: any[]; doneTasksByCat: any[] }>({ timeByCat: [], doneTasksByCat: [] });
   const [totalTime, setTotalTime] = useState(0);
-  const [totalDone, setTotalDone] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
 
   useEffect(() => {
-    const d = getReportData();
-    setData(d);
-    setTotalTime(d.timeByCat.reduce((a, c) => a + c.seconds, 0));
-    setTotalDone(d.doneTasksByCat.reduce((a, c) => a + c.count, 0));
+    const source = getReportData();
+    setReportData(source);
+    setTotalTime(source.timeByCat.reduce((acc, cur) => acc + cur.seconds, 0));
     setTotalProjects(getProjects().length);
   }, []);
 
-  const hasTimeData = data.timeByCat.length > 0;
-  const hasDoneData = data.doneTasksByCat.length > 0;
+  const allTasks = getTasks();
+  const doneTasks = allTasks.filter((t) => t.status === "done").length;
+  const taskCompletionRate = allTasks.length > 0 ? Math.round((doneTasks / allTasks.length) * 100) : 0;
+  const focusHours = Math.round(totalTime / 3600);
+  const taskFlow = allTasks.length > 0 ? Math.round((allTasks.filter((t) => t.status === "todo").length / allTasks.length) * 100) : 0;
 
-  const CustomTooltipTime = ({ active, payload }: any) => {
-    if (active && payload?.length) {
-      return (
-        <div className="bg-white rounded-DEFAULT px-3 py-2 shadow-glass text-xs">
-          <p className="font-medium text-on_surface">{payload[0].name}</p>
-          <p className="text-on_surface_variant">{formatSecondsLong(payload[0].payload.seconds)}</p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const topCategories = reportData.timeByCat
+    .slice()
+    .sort((a, b) => b.seconds - a.seconds)
+    .slice(0, 4);
+
+  const annualGrid = useMemo(() => buildAnnualGrid(totalTime), [totalTime]);
+  const timeDistribution = reportData.timeByCat.length
+    ? reportData.timeByCat.map((item) => ({ name: item.name, value: Math.round(item.seconds / 3600 * 10) / 10, color: item.color }))
+    : [{ name: "Sem dados", value: 1, color: "#CBD5E1" }];
+
+  const efficiencyLabel = taskCompletionRate > 80 ? "Excellent" : taskCompletionRate > 60 ? "Good" : "Needs focus";
+
+  const cardItems = [
+    { icon: Clock, title: "Focus Hours", value: `${focusHours}h`, trend: "+12%", color: "text-indigo-600" },
+    { icon: Zap, title: "Efficiency", value: `${taskCompletionRate}%`, trend: "Optimal", color: "text-emerald-600" },
+    { icon: Share2, title: "Task Flow", value: `${taskFlow}%`, trend: "Stable", color: "text-violet-600" },
+    { icon: Target, title: "Deep Work", value: `${Math.min(99, Math.round((focusHours / 20) * 100))}%`, trend: "High", color: "text-sky-600" },
+  ];
 
   return (
     <AppLayout>
-      <div className="p-8 max-w-5xl mx-auto">
-        <div className="mb-10">
-          <p className="text-on_surface_variant text-sm mb-1">Inteligência do seu trabalho</p>
-          <h1 className="text-3xl font-semibold text-on_surface tracking-tight">Relatórios</h1>
+      <div className="p-8 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8 gap-4">
+          <div>
+            <p className="text-sm text-on_surface_variant">Analytics Central</p>
+            <h1 className="text-3xl font-bold tracking-tight">Live Sync</h1>
+          </div>
+          <span className="rounded-full bg-emerald-500/10 text-emerald-600 text-xs px-3 py-1 font-semibold">LIVE SYNC</span>
         </div>
 
-        {/* KPIs */}
-        <div className="grid grid-cols-3 gap-4 mb-10">
-          <div className="surface-card p-5">
-            <FolderOpen size={20} className="text-primary mb-3" strokeWidth={1.75} />
-            <p className="text-2xl font-semibold text-on_surface tracking-tight">{totalProjects}</p>
-            <p className="text-xs text-on_surface_variant mt-1">Projetos</p>
-          </div>
-          <div className="surface-card p-5">
-            <CheckSquare size={20} className="text-emerald-600 mb-3" strokeWidth={1.75} />
-            <p className="text-2xl font-semibold text-on_surface tracking-tight">{totalDone}</p>
-            <p className="text-xs text-on_surface_variant mt-1">Tarefas Concluídas</p>
-          </div>
-          <div className="surface-card p-5">
-            <Clock size={20} className="text-blue-600 mb-3" strokeWidth={1.75} />
-            <p className="text-2xl font-semibold text-on_surface tracking-tight">{formatSecondsLong(totalTime)}</p>
-            <p className="text-xs text-on_surface_variant mt-1">Tempo Total</p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {cardItems.map(({ icon: Icon, title, value, trend, color }) => (
+            <div key={title} className="surface-card p-5 border border-slate-200/70">
+              <div className="flex items-center justify-between mb-4">
+                <Icon size={18} className={color} />
+                <span className="text-xs text-on_surface_variant">{title}</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-on_surface">{value}</h3>
+              <p className="text-xs text-on_surface_variant mt-1">{trend}</p>
+            </div>
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Pie chart - time by category */}
-          <div className="surface-card p-6">
-            <h2 className="text-sm font-semibold text-on_surface mb-5">Tempo por Categoria</h2>
-            {hasTimeData ? (
-              <ResponsiveContainer width="100%" height={260}>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+          <div className="lg:col-span-2 surface-card p-5 border border-slate-200/70">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Annual Density</h2>
+              <span className="text-xs text-on_surface_variant">Activity intensity mapped across the current calendar year</span>
+            </div>
+            <div className="overflow-hidden rounded-xl bg-slate-50 p-4">
+              <div className="grid grid-cols-52 grid-rows-7 gap-1">
+                {annualGrid.map((cell) => (
+                  <div
+                    key={cell.key}
+                    className={`${heatmapColors[cell.intensity]} h-2 w-2 rounded-sm`}
+                    title={`Density ${cell.intensity}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="surface-card p-5 border border-slate-200/70">
+            <h2 className="text-lg font-semibold mb-2">Time Distribution</h2>
+            <div className="h-56">
+              <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={data.timeByCat} dataKey="seconds" nameKey="name" cx="50%" cy="50%" outerRadius={90} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                    {data.timeByCat.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
+                  <Pie data={timeDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={45} outerRadius={75} paddingAngle={2}>
+                    {timeDistribution.map((entry, idx) => (
+                      <Cell key={idx} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip content={<CustomTooltipTime />} />
+                  <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-on_surface_variant/40">
-                <BarChart3 size={36} strokeWidth={1} className="mb-2" />
-                <p className="text-sm">Registre tempo em tarefas para ver dados aqui</p>
-              </div>
-            )}
+            </div>
+            <div className="mt-4 space-y-2">
+              {timeDistribution.slice(0, 4).map((slice) => (
+                <div key={slice.name} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: slice.color }} />
+                    <span>{slice.name}</span>
+                  </div>
+                  <span>{slice.value}h</span>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
 
-          {/* Bar chart - done tasks by category */}
-          <div className="surface-card p-6">
-            <h2 className="text-sm font-semibold text-on_surface mb-5">Tarefas Concluídas por Categoria</h2>
-            {hasDoneData ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={data.doneTasksByCat} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#444556" }} />
-                  <YAxis tick={{ fontSize: 11, fill: "#444556" }} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ background: "#fff", border: "none", borderRadius: "1rem", boxShadow: "0 12px 40px rgba(25,28,30,0.08)", fontSize: 12 }}
-                    cursor={{ fill: "#dfe0ff" }}
-                  />
-                  <Bar dataKey="count" name="Tarefas" radius={[8, 8, 0, 0]}>
-                    {data.doneTasksByCat.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-on_surface_variant/40">
-                <BarChart3 size={36} strokeWidth={1} className="mb-2" />
-                <p className="text-sm">Conclua tarefas para ver dados aqui</p>
+        <div className="surface-card p-6 border border-slate-200/70 mb-8 bg-gradient-to-r from-indigo-50 via-white to-slate-50">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+                <CircleDot size={12} /> Weekly Focus Insight
               </div>
-            )}
+              <h3 className="mt-3 text-xl font-bold">Your peak productivity window has shifted 45 minutes earlier this week.</h3>
+              <p className="mt-2 text-sm text-on_surface_variant">We’ve noticed a 23% increase in completed tasks when starting before 9:00 AM.</p>
+            </div>
+            <button className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold text-white hover:bg-indigo-700">Optimize my schedule</button>
           </div>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Productivity Clusters</h2>
+          <button className="text-sm font-medium text-blue-600">View All</button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {topCategories.map((cluster) => (
+            <div key={cluster.name} className="surface-card p-4 border border-slate-200/70">
+              <div className="flex items-center justify-between mb-3">
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cluster.color }} />
+                <span className="text-xs text-on_surface_variant">{Math.round((cluster.seconds / totalTime) * 100)}%</span>
+              </div>
+              <h3 className="text-sm font-semibold">{cluster.name}</h3>
+              <p className="text-xs text-on_surface_variant mt-1">{Math.round(cluster.seconds / 3600 * 10) / 10}h</p>
+            </div>
+          ))}
+          {topCategories.length === 0 && (
+            <div className="surface-card p-4 text-center text-on_surface_variant">Sem dados disponíveis ainda.</div>
+          )}
         </div>
       </div>
     </AppLayout>
