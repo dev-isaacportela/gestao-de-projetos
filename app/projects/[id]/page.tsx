@@ -16,7 +16,7 @@ import { cn, formatSeconds, getPriorityColor, getPriorityLabel } from "@/lib/uti
 import {
   ArrowLeft, Pencil, Plus, Play, Pause, RotateCcw,
   Check, Minus, Upload, Trash2, FileText, Clock,
-  ChevronRight, LayoutKanban, X,
+  ChevronRight, Kanban, X,
 } from "lucide-react";
 
 // ── Circular progress ──────────────────────────────────────────────────────
@@ -202,7 +202,7 @@ export default function ProjectPage() {
           <span className="text-on_surface font-medium">{project.name}</span>
           <div className="ml-auto flex items-center gap-2">
             <Link href={`/projects/${id}/kanban`} className="btn-ghost flex items-center gap-1.5 text-xs py-1.5">
-              <LayoutKanban size={14} /> Ver Kanban
+              <Kanban size={14} /> Ver Kanban
             </Link>
             <Link href={`/projects/${id}/edit`} className="btn-ghost flex items-center gap-1.5 text-xs py-1.5">
               <Pencil size={14} /> Editar
